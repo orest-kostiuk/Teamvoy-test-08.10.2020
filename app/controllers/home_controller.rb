@@ -1,9 +1,7 @@
 class HomeController < ApplicationController
   before_action :force_json, only: :search
 
-  def index
-    @data = []
-  end
+  def index; end
 
   def search
     @languages = SearchLanguages.new(params['q']).call
