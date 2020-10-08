@@ -17,7 +17,7 @@ class SearchLanguages
   private
 
   def query
-    @result = json_data.select { |item| !item.values.join(',').match(negative_query)}
+    @result = json_data.reject { |item| item.values.join(',').match(negative_query) }
     @result.select { |item| item.values.join(',').match(build_query.join('')) }
   end
 
