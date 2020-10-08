@@ -17,16 +17,22 @@ class SearchLanguages
 
   private
 
+  def negative_filter
+    json_data.reject { |item| item.values.join(',').match(negative_query) }
+  end
+
   def query
-    result = json_data.reject { |item| item.values.join(',').match(negative_query) }
-    result.select { |item| item.values.join(',').match(build_query.join('')) }
+    negative_filter.select { |item| item.values.join(',').match(build_query) }
   end
 
   def build_query
-    data = []
-    data << search_query.scan(QUERY_REGEXP).first&.split(' ')
-    data << search_query.scan(QUERY_REGEXP)[1]&.split(' ') if search_query.scan(QUERY_REGEXP).count > 1
-    data.flatten.map { |query| ".*?#{query.capitalize}" if query && !query.match(NEGATIVE_REGEXP) }
+    @words ||= search_query.scan(QUERY_REGEXP).map { |re| get_words_for_search(re) }.join('')
+  end
+
+  def get_words_for_search(words)
+    words.split(' ').map do |word|
+      ".*?#{word.capitalize}" if word && !word.match(NEGATIVE_REGEXP)
+    end.compact
   end
 
   def negative_query
