@@ -3,6 +3,7 @@
 class SearchLanguages
   NEGATIVE_REGEXP = /-.*/.freeze
   QUERY_REGEXP = /[^"|']+/.freeze
+  DEFAULT_REGEXP = /.^/.freeze
 
   attr_reader :search_query
 
@@ -29,7 +30,7 @@ class SearchLanguages
   end
 
   def negative_query
-    search_query.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || /.^/
+    search_query.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || DEFAULT_REGEXP
   end
 
   def json_data
