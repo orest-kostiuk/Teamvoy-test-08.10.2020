@@ -4,7 +4,8 @@ class HomeController < ApplicationController
   def index; end
 
   def search
-    @languages = SearchLanguages.new(params['q']).call
+    json_data = File.open("#{Rails.root}/data.json")
+    @languages = Search.new(params['q'], json_data).call
   end
 
   private

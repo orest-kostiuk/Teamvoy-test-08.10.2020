@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 require "rails_helper"
 
-describe SearchLanguages do
-  let(:json_search) { SearchLanguages.new(query) }
+describe Search do
+  let(:json_data) { File.open("#{Rails.root}/data.json") }
+  let(:json_search) { Search.new(query, json_data) }
 
   context 'search by name' do
     let(:query) { 'Common Lisp' }
