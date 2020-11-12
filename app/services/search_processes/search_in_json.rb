@@ -6,41 +6,43 @@ class SearchProcesses::SearchInJson
   end
 
   def call(json_data)
-    prepare_data(json_data)
-    res = StringParser.new(@search_query).process
-    Searching.new(res, @json_data).process
+    PositiveSearch.new(NegativeSearch.new(QueryParser.new(@search_query), PrepareData.new(json_data))).output
   end
 
-  private
+  ##############
+  class PrepareData
+    attr_accessor :json_data
+    def initialize(data)
+      @json_data = data
+    end
 
-  def prepare_data(json_data)
-    @json_data = JSON.load(json_data)
+    def output
+      JSON.load(json_data)
+    end
   end
 
-
-  class StringParser
+  #################
+  class QueryParser
     NEGATIVE_REGEXP = /-.*/.freeze
     QUERY_REGEXP = /[^"|']+/.freeze
     DEFAULT_REGEXP = /.^/.freeze
 
-    def initialize(string)
-      @string = string
+    attr_accessor :query
+
+    def initialize(data)
+      @query_string = data
     end
 
-    def process
+    def output
       parse_query
-      build_query
     end
 
     private
 
-    def build_query
-      [@query, @negative_query]
-    end
 
     def parse_query
-      @query = @string.scan(QUERY_REGEXP).map { |re| get_words_for_search(re) }.join('')
-      @negative_query = @string.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || DEFAULT_REGEXP
+      @query = @query_string.scan(QUERY_REGEXP).map { |re| get_words_for_search(re) }.join('')
+      @negative_query = @query_string.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || DEFAULT_REGEXP
     end
 
     def get_words_for_search(words)
@@ -50,29 +52,28 @@ class SearchProcesses::SearchInJson
     end
   end
 
+  ##################
+  class NegativeSearch
+    attr_accessor :parsed_query
 
-  class Searching
-
-    def initialize(parsed_string, data)
-      @parsed_string = parsed_string
+    def initialize(query, data)
+      @parsed_query = query
       @data = data
     end
 
-    def process
-      @result = NegativeSearch.new.negative_filter(@parsed_string[1], @data)
-      BasicSearch.new.query(@parsed_string[0], @result)
+    def output
+      @data.output.reject { |item| item.values.join(',').match(parsed_query.output) }
+    end
+  end
+
+  ###################
+  class PositiveSearch
+    def initialize(data)
+      @data = data
     end
 
-    class NegativeSearch
-      def negative_filter(query, data)
-        data.reject { |item| item.values.join(',').match(query) }
-      end
-    end
-
-    class BasicSearch
-      def query(query, data)
-        data.select { |item| item.values.join(',').match(query) }
-      end
+    def output
+      @data.output.select { |item| item.values.join(',').match(@data.parsed_query.query) }
     end
   end
 end
