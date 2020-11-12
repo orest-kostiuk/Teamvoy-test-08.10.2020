@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SearchProcesses::SearchInJson
+class SearchInJson
   def initialize(query)
     @search_query = query
   end

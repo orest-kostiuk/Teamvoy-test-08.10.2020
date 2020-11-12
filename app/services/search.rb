@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Search
-  PROCESSES = { json: SearchProcesses::SearchInJson }.freeze
+  PROCESSES = { json: SearchInJson }.freeze
   def initialize(query, data)
     @query = query
     @data = data
