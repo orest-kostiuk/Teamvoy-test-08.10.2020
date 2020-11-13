@@ -5,7 +5,7 @@ class HomeController < ApplicationController
 
   def search
     json_data = File.open("#{Rails.root}/data.json")
-    @languages = Search.new(params['q'], json_data).call
+    @languages = SearchEngine.new(params['q'], json_data).call
   end
 
   private
