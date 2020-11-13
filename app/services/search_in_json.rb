@@ -1,36 +1,36 @@
 # frozen_string_literal: true
 
 class SearchInJson
-  def initialize(query)
-    @search_query = query
+  attr_accessor :json_data, :parsed_positive_search, :parsed_negative_search
+
+  def initialize(search_query, json_data)
+    @parsed_positive_search = ParsePositiveQuery.new(search_query)
+    @parsed_negative_search = ParseNegativeQuery.new(search_query)
+    @json_data = PrepareData.new(json_data)
   end
 
-  def call(json_data)
-    PositiveSearch.new(NegativeSearch.new(QueryParser.new(@search_query), PrepareData.new(json_data))).output
+  def call
+    PositiveSearch.new(NegativeSearch.new(self)).output
   end
 
   ##############
   class PrepareData
-    attr_accessor :json_data
     def initialize(data)
       @json_data = data
     end
 
     def output
-      JSON.load(json_data)
+      JSON.load(@json_data)
     end
   end
 
   #################
-  class QueryParser
+  class ParsePositiveQuery
     NEGATIVE_REGEXP = /-.*/.freeze
     QUERY_REGEXP = /[^"|']+/.freeze
-    DEFAULT_REGEXP = /.^/.freeze
 
-    attr_accessor :query
-
-    def initialize(data)
-      @query_string = data
+    def initialize(query_string)
+      @query_string = query_string
     end
 
     def output
@@ -39,10 +39,8 @@ class SearchInJson
 
     private
 
-
     def parse_query
       @query = @query_string.scan(QUERY_REGEXP).map { |re| get_words_for_search(re) }.join('')
-      @negative_query = @query_string.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || DEFAULT_REGEXP
     end
 
     def get_words_for_search(words)
@@ -52,17 +50,36 @@ class SearchInJson
     end
   end
 
+  ######################
+  class ParseNegativeQuery
+    NEGATIVE_REGEXP = /-.*/.freeze
+    DEFAULT_REGEXP = /.^/.freeze
+
+    def initialize(query_string)
+      @query_string = query_string
+    end
+
+    def output
+      parse_query
+    end
+
+    private
+
+    def parse_query
+      @negative_query = @query_string.scan(NEGATIVE_REGEXP)&.first&.sub('-', '')&.capitalize || DEFAULT_REGEXP
+    end
+  end
+
   ##################
   class NegativeSearch
-    attr_accessor :parsed_query
+    attr_accessor :data
 
-    def initialize(query, data)
-      @parsed_query = query
+    def initialize(data)
       @data = data
     end
 
     def output
-      @data.output.reject { |item| item.values.join(',').match(parsed_query.output) }
+      @data.json_data.output.reject { |item| item.values.join(',').match(@data.parsed_negative_search.output) }
     end
   end
 
@@ -73,7 +90,7 @@ class SearchInJson
     end
 
     def output
-      @data.output.select { |item| item.values.join(',').match(@data.parsed_query.query) }
+      @data.output.select { |item| item.values.join(',').match(@data.data.parsed_positive_search.output) }
     end
   end
 end

@@ -20,6 +20,6 @@ class Search
   end
 
   def start_search
-    @process.new(@query).call(@data)
+    @process.new(@query, @data).call
   end
 end
